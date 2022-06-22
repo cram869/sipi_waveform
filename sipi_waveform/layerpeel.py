@@ -58,5 +58,6 @@ def layerpeel(t, v_measured, v_matched = None, Zo_system = 50):
     return t, Zo, Zo_raw
     #return t[:len(v_measured)/2], Zo_peeled, Zo_raw
 
-def mylayerpeel():
-    pass
+# TODO: Write an improved peeling algorithm.
+# def mylayerpeel():
+#    pass

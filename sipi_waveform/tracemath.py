@@ -8,35 +8,13 @@ Some functions here are presently duplicated in fft.py.
 original author: Michael Cracraft (macracra@us.ibm.com)
 """
 
-# import os
 import sys
 import numpy as np
 import scipy.fftpack as sfft
-# import re
-import time
+import matplotlib.pyplot as plt
 from scipy.signal import lfilter, butter  # , freqs
 
-############################################################################
-
-
-def print_timing(func):
-    def wrapper(*arg, **kwargs):
-        t1 = time.time()
-        res = func(*arg, **kwargs)
-        t2 = time.time()
-        # argstr = ','.join([str(a) for a in arg])
-        # kwargstr = ','.join(['%s=%s'%(str(key), str(val)) \
-        # for key, val in kwargs.items()])
-        # print( '%s(%s,%s) took %0.3f ms' % \
-        # (func.func_name, argstr, kwargstr, (t2-t1)*1000.0))
-        dt = t2 - t1
-        if dt > 0.09:
-            print('%s took %0.6f s' % (func.__name__, (t2-t1)))
-        else:
-            print('%s took %0.3f ms' % (func.__name__, (t2-t1)*1000.0))
-        return res
-    return wrapper
-
+from .util import print_timing
 
 ############################################################################
 
@@ -267,6 +245,9 @@ def eyeheight(t, v, ui, vref = None):
         vmin = np.min(v)
         vmax = np.max(v)
         vref = 0.5*(vmin + vmax)
+        # Note: I write to stderr by default here because I used this function
+        # for many SNAP optimizations and a write to stdout would have fouled
+        # up SNAP's result collection.
         sys.stderr.write('vmin = %g, vmax = %g, vref = %g\n' % (vmin,vmax,vref))
 
     ew, ec = eyewidth(t, v, ui, vref, bGetCenter = True)
@@ -327,14 +308,13 @@ def plotEye(t, v, ui, vref = None, voffset = None, AutoCenter = True):
     """
     Plot the eye for the time and voltage data given.
     """
-    from pylab import plot, grid, show
+    fig, ax = plt.subplots(1,1)
 
     tout, vout = eyevectors(t, v, ui, vref, voffset, AutoCenter)
 
-    plot(tout, vout, 'b.')
-    grid(True)
-    show()
-    return tout, vout
+    ax.plot(tout, vout, 'b.')
+    ax.grid(True)
+    return fig
 
 ################################################################################
 

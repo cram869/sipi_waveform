@@ -1,20 +1,15 @@
 #!/usr/bin/env python
 """
 Specialty tool for generating and analyzing certain types of signals.
-NOT FUNCTIONAL CURRENT due to bad references to my old cramsens library.
 
 original author: Michael Cracraft (macracra@us.ibm.com)
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
-import electrical_analysis.waveform.tracemath as tm
 
-# from matplotlib import rcParams as rcp
-# rcp['text.usetex'] = True
-# rcp['legend.fontsize'] = 12
-# rcp['figure.figsize'] = (8,9./2.)
-# rcp['savefig.dpi'] = 150
+from .tracemath import dftcalc as tm_dftcalc, dBmag as tm_dBmag,\
+    singlesidedspectrum as tm_ss_spectrum
 
 # These global settings below were concocted for use on 6 Gbps SAS links.
 # 5 - 10% rise fall match about as good as can do.
@@ -164,9 +159,9 @@ def delaytest():
         d = diffbitstream_t(vlow, vhigh, td, tr, tf, ui, bstring)
         #v = d.value(t)
         vc = d.commvalue(t)
-        fc, Vc = tm.dftcalc(t,vc, DoubleSided=False)
+        fc, Vc = tm_dftcalc(t,vc, DoubleSided=False)
 
-        dBVc = tm.dBmag(Vc)
+        dBVc = tm_dBmag(Vc)
 
         f_ind_list = np.array([np.argmin(np.abs(fc - fai)) for fai in fa])
         res_array[ii,:] = dBVc[f_ind_list]
@@ -227,12 +222,12 @@ def risefalltest():
         d_l.append(d)
         v = d.value(t)
         v_l.append(v)
-        f, V = tm.singlesidedspectrum(t, v)
-        dBVd = tm.dBmag(V)
+        f, V = tm_ss_spectrum(t, v)
+        dBVd = tm_dBmag(V)
         vc = d.commvalue(t)
         vc_l.append(vc)
-        fc, Vc = tm.dftcalc(t,vc, DoubleSided=False)
-        dBVc = tm.dBmag(Vc)
+        fc, Vc = tm_dftcalc(t,vc, DoubleSided=False)
+        dBVc = tm_dBmag(Vc)
 
         f_ind_list = np.array([np.argmin(np.abs(fc - fai)) for fai in fa])
         res_array[ii,:] = dBVc[f_ind_list]
@@ -287,8 +282,8 @@ def combinedskew():
             d = diffbitstream_t(vlow, vhigh, td, tr, tf, ui, bstring)
 
             vc = d.commvalue(t)
-            fc, Vc = tm.dftcalc(t,vc, DoubleSided=False)
-            dBVc = tm.dBmag(Vc)
+            fc, Vc = tm_dftcalc(t,vc, DoubleSided=False)
+            dBVc = tm_dBmag(Vc)
 
             f_ind_list = np.array([np.argmin(np.abs(fc - fai)) for fai in fa])
             res_array[:,ii,jj] = dBVc[f_ind_list]
@@ -387,12 +382,12 @@ def run_single_case_w_plots(tdelay=0,tr=tr,tf=tf,ui=ui,**kwargs):
         fig.savefig(basename + '.pdf')
         fig.savefig(basename + '.eps')
 
-    f,V = tm.dftcalc(t,v, DoubleSided=False)
-    fp,Vp = tm.dftcalc(t,vp, DoubleSided=False)
-    fn,Vn = tm.dftcalc(t,vn, DoubleSided=False)
-    fc,Vc = tm.dftcalc(t,vc, DoubleSided=False)
+    f,V = tm_dftcalc(t,v, DoubleSided=False)
+    fp,Vp = tm_dftcalc(t,vp, DoubleSided=False)
+    fn,Vn = tm_dftcalc(t,vn, DoubleSided=False)
+    fc,Vc = tm_dftcalc(t,vc, DoubleSided=False)
 
-    dB = tm.dBmag
+    dB = tm_dBmag
 
     fig = plt.figure()
     a = fig.add_subplot(1,1,1)
@@ -475,13 +470,13 @@ def make_spectra_example_plot(random=False):
     vc_risefall = dstream_risefall.commvalue(t)
     vc_both = dstream_both.commvalue(t)
 
-    fskew,Vc_skew = tm.dftcalc(t, vc_skew, DoubleSided=False)
-    frisefall,Vc_risefall = tm.dftcalc(t, vc_risefall, DoubleSided=False)
-    fboth,Vc_both = tm.dftcalc(t, vc_both, DoubleSided=False)
+    fskew,Vc_skew = tm_dftcalc(t, vc_skew, DoubleSided=False)
+    frisefall,Vc_risefall = tm_dftcalc(t, vc_risefall, DoubleSided=False)
+    fboth,Vc_both = tm_dftcalc(t, vc_both, DoubleSided=False)
 
     print( "Fs = ", fboth[1]-fboth[0], " : Fmax = ", max(fboth) )
 
-    dB = tm.dBmag
+    dB = tm_dBmag
 
     fig = plt.figure()
     a = fig.add_subplot(1,1,1)

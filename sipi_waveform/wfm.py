@@ -1,34 +1,23 @@
 #!/usr/bin/env python3
 """
-Read and manipulate wfm files (Tektronix formats).  Includes both binary and
-ASCII formats.
+Read and manipulate wfm files and some other oscilloscope and TDR formats.
+Includes several Tektronix formats and the HDF5 Keysight format.
 
 original author: Michael Cracraft (macracra@us.ibm.com)
+author: Michael Cracraft (cracraft@rose-hulman.edu)
+
 """
 import sys
 import os
 import os.path
 import re
 import numpy as np
-import time
 import struct
+
 from .tracemath import nearest_index
+from .util import print_timing
 
-
-def print_timing(func):
-    """Decorator for timing function."""
-    def wrapper(*arg, **kwargs):
-        t1 = time.time()
-        res = func(*arg, **kwargs)
-        t2 = time.time()
-        argstr = ','.join([str(a) for a in arg])
-        kwargstr = ','.join(['%s=%s' % (str(key), str(val))
-                             for key, val in kwargs.items()])
-        print('%s(%s,%s) took %0.3f s' %
-              (func.__name__, argstr, kwargstr, (t2-t1)))
-        return res
-    return wrapper
-
+###############################################################################
 
 @print_timing
 def readfile(filename, **kwargs):
@@ -399,8 +388,6 @@ def tek_sparameter_wizard_read(path):
 
 
 ##############################################################################
-
-
 
 @print_timing
 def wfmbinaryreader(filename, **kwargs):

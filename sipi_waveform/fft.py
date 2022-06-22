@@ -5,105 +5,22 @@ Provide convenience functions for Fourier analysis of signals.
 original author: Michael Cracraft (macracra@us.ibm.com)
 '''
 
-import os, os.path
-#import pylab as pl
 import scipy.fftpack as sfft
 import numpy as np
 import matplotlib.pyplot as plt
-from electrical_analysis.waveform.tracemath import nearest_index
 
-# def frequency_scale(f, unit='GHz'):
-#     """
-#     This routine assumes that the frequency argument is in Hz to start.
-#     """
-#     f_scale = dict(hz=1., khz=1e3, mhz=1e6, ghz=1e9)[unit.lower()]
-#     return f/f_scale
+# Local imports
+from .tracemath import nearest_index
 
-# def time_scale(t, unit='ns'):
-#     """
-#     This routine assumes that the frequency argument is in sec to start.
-#     """
-#     t_scale = dict(s=1., sec=1., ms=1e3, us=1e6, ns=1e9, ps=1e12, fs=1e15)[unit.lower()]
-#     return t*t_scale
+##############################################################################
 
-# def voltage_scale(v, unit='mV'):
-#     """
-#     This routine assumes that the voltage argument is in V to start.
-#     """
-#     v_scale = dict(kv=1e-3, v=1., mv=1e3, uv=1e6)[unit.lower()]
-#     return v*v_scale
-
+from .wfm import tekcsvread as wfm_tekcsvread # Find in wfm instead.
 def tekcsvread(filename = None, points = None, fileObj = None):
-    """
-    Read the csv data from the Tek Scope. Get col 4 and 5 only.
-    This does not close the file on return but returns the file
-    object to be reused later to continue loading for the previous
-    location.
-    """
-    f = None
-    if not fileObj or fileObj.closed:
-        """ Open the file at the start. """
-        try:
-            f = open(filename, 'r')
-        except:
-            print("toast")
-    else:
-        """ Work with an already open file. """
-        f = fileObj
+    """Deprecated in this usage.  Use from wfm instead."""
+    return wfm_tekcsvread(filename, points, fileObj)
 
-    # If points was given read up to that many lines.  If points was not given,
-    # read to the end of the file.
-    if points > 0:
-        fpointLines = [f.readline().strip().split(',')[3:] for ii in range(0,points)]
-        tlist = [float(v[0]) for v in fpointLines if v]
-        vlist = [float(v[1]) for v in fpointLines if v] # cull out the empty list if they exist
-    else:
-        fpointOneLine = f.readline().strip().split(',')[3:]
-        tlist = []
-        vlist = []
-        while fpointOneLine:
-            tlist.append(float(fpointOneLine[0]))
-            vlist.append(float(fpointOneLine[1]))
-            fpointOneLine = f.readline().strip().split(',')[3:]
-    # Check the first record to see if it is empty.
-    if len(tlist) == 0:
-        return f, [], []
-    # Otherwise return the file object and the point lists.
-    if points is not None and len(tlist) != points:
-        Nadded = points - len(tlist)
-        Tmaxprev = tlist[-1]
-        Ts = Tmaxprev - tlist[-2]
-        Tmax = Tmaxprev + (Ts * Nadded)
-        tlist += list(np.arange(Tmaxprev+Ts, Tmax+Ts/2., Ts))
-        print("points ==> ", len(tlist), points)
-        vlist += [0]*Nadded
-    return f, np.array(tlist), np.array(vlist)
-
-def tekcsvreadsubset(ifilename, ofilename, xrange, N = None):
-    try:
-        f = open(ifilename, 'r')
-        fo = open(ofilename, 'w')
-
-        if N:
-            flineslist = f.read().splitlines()
-            for iline in flineslist:
-                xi = float(iline.strip().split(',')[3])
-                if (xi >= xrange[0]) and (xi <= xrange[1]):
-                    fo.write(iline + '\n')
-        else:
-            fpointLines = [f.readline().strip().split(',')[3:] for ii in range(0,N)]
-            while len(fpointLines) > 0:
-                for iline in fpointLines:
-                    xi = float(iline.strip().split(',')[3])
-                    if (xi >= xrange[0]) and (xi <= xrange[1]):
-                        fo.write(iline + '\n')
-                fpointLines = [f.readline().strip().split(',')[3:] for ii in range(0,N)]
-
-        f.close()
-        fo.close()
-    except:
-        print( "What's wrong with tekcsvreadsubset?" )
-
+###############################################################################
+###############################################################################
 # My own dft calculations (very slow and meant only for debug)
 def dft_test(x):
     N = len(x)
@@ -121,27 +38,31 @@ def idft_test(Xf):
         x[m] = sum([Xf[k]*np.exp(expfactor*m*k) for k in range(0,N)])/float(N)
     return x
 
+###############################################################################
+###############################################################################
 # Even/odd checks.
-def isodd(m):
+def _isodd(m):
     if m % 2 == 0:
         return False
     return True
 
+###############################################################################
+###############################################################################
 # Frequency translation.
-# Use scipy.fftpack.fftfreq to make this simpler.
 def fftfreq(N, Ts, DoubleSided = True):
     '''N = Number of points, Ts = sample rate'''
     if DoubleSided:
         return sfft.fftshift(sfft.fftfreq(N, Ts))
     else:
         Nsingle = 0
-        if isodd(N):
+        if _isodd(N):
             Nsingle = int((N+1)/2)
         else:
             Nsingle = int(N/2)
             print(Nsingle)
         return sfft.fftfreq(N, Ts)[:Nsingle]
 
+###############################################################################
 def dftcalc(t, v, N=None, DoubleSided=True, **kwargs):
     """
     N = Number of samples to use in the calculation
@@ -168,17 +89,19 @@ def dftcalc(t, v, N=None, DoubleSided=True, **kwargs):
         V = sfft.fft(v_,N)[:len(f)]*2.
         V[0] /= 2.
     return f, V/L # Divide by L to get the right scaling
-
+###############################################################################
 def singlesidedspectrum(t,v, N=None, **kwargs):
     return dftcalc(t,v,N,DoubleSided=False, **kwargs)
-
+###############################################################################
 def doublesidedspectrum(t,v, N=None, **kwargs):
     return dftcalc(t,v,N,DoubleSided=True, **kwargs)
-
+###############################################################################
+###############################################################################
 def signal_derivative(t,v):
     Ts = t[1]-t[0]
     return np.hstack((np.array([0.,]), (v[1:]-v[:-1])/Ts))
 
+###############################################################################
 def step_spectrum(t,v, **kwargs):
     t_ = t[:]
     v_diff = signal_derivative(t,v)
@@ -187,6 +110,7 @@ def step_spectrum(t,v, **kwargs):
     V = V_diff / (np.pi*2.*f)
     return f,V
 
+###############################################################################
 def normalized_spectrum(t, v, vref, v_step_spectrum=False, vref_step_spectrum=True):
     """
     Take the time scale, @t, and two voltage waveforms, @v and @vref.  Then,
@@ -301,7 +225,7 @@ def zero_outside_window(t,v,twin,voutside=None):
 ################################################################################
     
 def step_response(f, Y):
-    """Yowh"""
+    """TODO: Polish this routine."""
     Fs = f[1]-f[0]
     
     y = sfft.ifft(Y)
@@ -574,39 +498,3 @@ def stfftcontf(t,f,Xf, **kwargs):
 ##     np.show()
 
 ##################################################
-
-
-
-##################################################
-def dBmag(x):
-    return 20.*np.log10(np.abs(x))
-dB = dBmag
-
-def dBpwr(x):
-    return 10.*np.log10(np.abs(x))
-
-################################################################################
-def WriteGnuplotFile(filename, x, y, Z):
-    """
-
-    """
-    from copy import deepcopy
-
-    if len(np.shape(x)) > 1:
-        X = deepcopy(x)
-        x = X[0]
-
-    if len(np.shape(y)) > 1:
-        Y = deepcopy(y)
-        y = np.transpose(Y)[0]
-
-    Nx = len(x)
-    Ny = len(y)
-
-    xlist = sorted(list(x) * Ny)
-    ylist = list(y) * Nx
-    zlist = []
-    for icol in np.transpose(Z):
-        zlist.append(list(icol))
-
-    return xlist, ylist, zlist, Nx, Ny
