@@ -13,4 +13,6 @@ The package can also be installed directly from the Github repo.
 
 `python -m pip install git+https://github.com/cram869/sipi_waveform.git`
 
-
+# Testing
+The `test` folder includes a Jupyter notebook and example Tektronix wfm file (binary format) to be used to verify a few of the package functions.
+The current tests are no where near exhaustive.
