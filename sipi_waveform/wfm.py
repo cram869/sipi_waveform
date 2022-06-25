@@ -13,6 +13,7 @@ import os.path
 import re
 import numpy as np
 import struct
+from pandas import read_csv as pd_read_csv
 
 from .tracemath import nearest_index
 from .util import print_timing
@@ -313,6 +314,56 @@ def tekcsvread(filename = None):
     v = [float(row.split(',')[4]) for row in rowlist]
 
     return np.array(t), np.array(v)
+
+
+################################################################################
+@print_timing
+def tek_mdo_csvread(filename = None):
+    """Example file:
+Model,MDO4014B-3
+Firmware Version,3.22
+
+Waveform Type,ANALOG
+Point Format,Y
+Horizontal Units,s
+Horizontal Scale,4e-05
+Horizontal Delay,0
+Sample Interval,4e-10
+Record Length,2e+07
+Gating,0.0% to 100.0%
+Probe Attenuation,10
+Vertical Units,V
+Vertical Offset,0
+Vertical Scale,0.5
+Vertical Position,-3.76
+,
+,
+,
+Label,
+TIME,CH2
+-4.0000000e-03,3.34
+-3.9999996e-03,3.3
+-3.9999992e-03,3.28
+-3.9999988e-03,3.3"""
+
+    # Load the file.
+    with open(filename, 'r') as fobj:
+        line_ = fobj.readline().lower()
+        # header_pair_list = []
+        # The header information seems unnecessary for basic plotting.
+        # Discard it until the 'label' line.
+        while 'label' not in line_ :
+            # header_pair_list.append(line_.split(DELIMITER))
+            line_ = fobj.readline().lower()
+        # The last line read should have "label" in it.
+        # Throw that line away and get the next one as the data headers.
+        # Use the Pandas read_csv routine to do the rest of the work.
+        df = pd_read_csv(fobj)
+        output_d = {}
+        for col_i in df.columns:
+            output_d.setdefault(col_i, np.array(df[col_i]))
+
+        return output_d
 
 
 ################################################################################

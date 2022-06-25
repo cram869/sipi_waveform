@@ -281,10 +281,12 @@ def eyeheight(t, v, ui, vref = None):
 
 ################################################################################
 
-def eyevectors(t, v, ui, vref = None, voffset = None, AutoCenter=True):
+def eyevectors(t, v, ui, vref = None, AutoCenter=True):
     """
     Realign the time vector and the voltage.  Make it 2 UI long.
     """
+    # The mean value of the voltage should be effective if the signal is zero 
+    # balanced.
     if vref is None:
         vref = np.mean(v)
 
@@ -301,18 +303,57 @@ def eyevectors(t, v, ui, vref = None, voffset = None, AutoCenter=True):
 
     return tout, vout
 
-
 ################################################################################
 
-def plotEye(t, v, ui, vref = None, voffset = None, AutoCenter = True):
+def eyevectors_edgealigned(t, v, ui, vref = None):
+    """
+    Realign the time vector and the voltage according to the leading edge 
+    crossing.  This method is the same as generating a scope eye with an edge
+    trigger and no delays.  Make it 2 UI long.
+    """
+    # The mean value of the voltage should be effective if the signal is zero 
+    # balanced.
+    if vref is None:
+        vref = np.mean(v)
+
+    Ts = t[1]-t[0] # sample time
+    samples_per_ui_n0p25 = -int(np.round(0.5*ui/Ts))
+    samples_per_ui_p0p75 = int(np.round(1.5*ui/Ts))
+    i_edges = zerocross(t, v, vref, getIndices=True)
+
+    tout = []
+    vout = []
+    for ii in i_edges:
+        t0 = t[ii]
+        start_index_test = ii + samples_per_ui_n0p25
+        start_index =  start_index_test if start_index_test > 0 else 0
+        end_index_test = ii + samples_per_ui_p0p75
+        end_index = end_index_test if end_index_test < len(v) else -1
+        tshift = t[start_index:end_index] - t0
+        vshift = v[start_index:end_index]
+        
+        tout.extend(tshift)
+        vout.extend(vshift)
+
+    return np.array(tout), np.array(vout)
+
+################################################################################
+def plotEye(t, v, ui, vref = None, voffset = None, mode = 'ui_autocenter'):
     """
     Plot the eye for the time and voltage data given.
     """
     fig, ax = plt.subplots(1,1)
 
-    tout, vout = eyevectors(t, v, ui, vref, voffset, AutoCenter)
+    if mode == 'ui_autocenter':
+        tout, vout = eyevectors(t, v, ui, vref, voffset, AutoCenter=True)
+    elif mode == 'ui':
+        tout, vout = eyevectors(t, v, ui, vref, voffset, AutoCenter=False)
+    elif mode.lower() == 'edge':
+        tout, vout = eyevectors_edgealigned(t, v, ui, vref = None)
+    else:
+        print("Invalid mode argument")
 
-    ax.plot(tout, vout, 'b.')
+    ax.plot(tout, vout, 'C0.', alpha=0.1)
     ax.grid(True)
     return fig
 
