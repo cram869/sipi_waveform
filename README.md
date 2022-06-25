@@ -16,6 +16,7 @@ The package can also be installed directly from the Github repo.
 # Updating
 Updating the package may be completed by adding the "-U" switch to the pip command.
 For example,
+
 `python -m pip install -U git+https://github.com/cram869/sipi_waveform.git`
 
 # Testing
