@@ -171,12 +171,29 @@ def interval(t, v, vref, **kwargs):
     return intervals_a[:,0], intervals_a[:,1] # time location and interval width
 
 def meanui(t, v, vref = None):
+    """meanui : This version will work well to estimate the UI
+    with a clock signal, but it will overestimate the UI for a
+    PRBS or other data pattern."""
     if not vref:
         vref = np.mean(v)
 
     tzc = zerocross(t, v, vref)
     dtzc = [tzc[ii]-tzc[ii-1] for ii in range(1, len(tzc))]
     return np.mean(dtzc)
+
+def meanui_general(t, v, ui_target, vref = None, **kwargs):
+    if not vref:
+        vref = np.mean(v)
+
+    tzc = zerocross(t, v, vref, **kwargs)
+    dtzc = np.array([tzc[ii]-tzc[ii-1] for ii in range(1, len(tzc))])
+
+    bitskip = np.round(dtzc / ui_target) - 1
+    dtzc_adjustedby_ui = dtzc - ui_target*bitskip
+
+    if kwargs.get('return_vector', False):
+        return dtzc_adjustedby_ui
+    return np.mean(dtzc_adjustedby_ui)
 
 def mzcui(t, v, vref, ui):
     """
